@@ -3,12 +3,8 @@ from __future__ import annotations
 import dataclasses
 import math
 import uuid
-from typing import TYPE_CHECKING, cast
 
 import vector
-
-if TYPE_CHECKING:
-    from autocarter.drawer import Style
 
 
 @dataclasses.dataclass
@@ -48,7 +44,7 @@ class Station:
                 self.id in k]
 
     def connections2(self, n: Network) -> dict[Line, list[Station]]:
-        return {l: [s for s, ls in self.connections(n) if l in ls] for l in self.lines(n)}
+        return {line: [s for s, ls in self.connections(n) if line in ls] for line in self.lines(n)}
 
     def lines(self, n: Network) -> set[Line]:
         return {a for _, b in self.connections(n) for a in b if isinstance(a, Line)}

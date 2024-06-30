@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import dataclasses
 import math
-from typing import cast
 
 import svg
 import vector

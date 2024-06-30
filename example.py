@@ -1,7 +1,6 @@
 import json
 import re
 
-import requests
 import vector
 
 from autocarter.drawer import Drawer, Style
