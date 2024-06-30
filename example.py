@@ -7,9 +7,9 @@ from autocarter.drawer import Drawer, Style
 from autocarter.network import Line, Network, Station
 
 with open("data.json") as f:
-    data = json.load(f)['rail']
+    data = json.load(f)["rail"]
 n = Network()
-company_uuid, company_json = next((k, v) for k, v in data['company'].items() if v['name'] == "nFLR")
+company_uuid, company_json = next((k, v) for k, v in data["company"].items() if v["name"] == "nFLR")
 
 col = {
     "1": "#c00",
@@ -43,33 +43,39 @@ col = {
     "AB": "",
 }
 
-for line_uuid in company_json['lines']:
-    line_json = data['line'][line_uuid]
-    name = line_json['name']
+for line_uuid in company_json["lines"]:
+    line_json = data["line"][line_uuid]
+    name = line_json["name"]
     if name.startswith("N") or name == "AB":
         colour = col[name]
     elif name.startswith("W"):
         colour = col[name[1:]]
     else:
-        match = re.search(r"^(.)(\d+)(.*)$", line_json['name'])
+        match = re.search(r"^(.)(\d+)(.*)$", line_json["name"])
         colour = col[match.group(2)]
-    n.add_line(Line(id=line_uuid, name=line_json['name'], colour=colour))
+    n.add_line(Line(id=line_uuid, name=line_json["name"], colour=colour))
 
-for station_uuid in company_json['stations']:
-    station_json = data['station'][station_uuid]
-    coordinates = station_json['coordinates'] or [0, 0]
-    n.add_station(Station(id=station_uuid, name=station_json['name'].replace("&", "&amp;"), coordinates=vector.obj(x=coordinates[0], y=coordinates[1])))
+for station_uuid in company_json["stations"]:
+    station_json = data["station"][station_uuid]
+    coordinates = station_json["coordinates"] or [0, 0]
+    n.add_station(
+        Station(
+            id=station_uuid,
+            name=station_json["name"].replace("&", "&amp;"),
+            coordinates=vector.obj(x=coordinates[0], y=coordinates[1]),
+        )
+    )
 
 visited_stations = []
-for station_uuid in company_json['stations']:
-    station_json = data['station'][station_uuid]
-    for conn_station_uuid, connections in station_json['connections'].items():
+for station_uuid in company_json["stations"]:
+    station_json = data["station"][station_uuid]
+    for conn_station_uuid, connections in station_json["connections"].items():
         if conn_station_uuid in visited_stations:
             continue
         for connection in connections:
-            if n.lines[connection['line']].name.startswith("W"):
+            if n.lines[connection["line"]].name.startswith("W"):
                 continue
-            n.connect(n.stations[station_uuid], n.stations[conn_station_uuid], n.lines[connection['line']])
+            n.connect(n.stations[station_uuid], n.stations[conn_station_uuid], n.lines[connection["line"]])
     visited_stations.append(station_uuid)
 
 n.finalise()

@@ -26,8 +26,9 @@ class Drawer:
         s = s or Style()
         for station in n.stations.values():
             station.calculate_line_coordinates(n)
-        s.offset = vector.obj(x=min(s.coordinates.x for s in n.stations.values()),
-                              y=min(s.coordinates.y for s in n.stations.values()))
+        s.offset = vector.obj(
+            x=min(s.coordinates.x for s in n.stations.values()), y=min(s.coordinates.y for s in n.stations.values())
+        )
         self.n = n
         self.s = s
 
@@ -48,11 +49,16 @@ class Drawer:
             height=wh.y,
             width=wh.x,
             elements=[
-                *(self.draw_connection(self.n.stations[u], self.n.stations[v],
-                                       {line if isinstance(line, Connection) else self.n.lines[line] for line in lines})
-                  for (u, v), lines in self.n.connections.items()),
-                *(self.draw_station(s) for s in self.n.stations.values())
-            ]
+                *(
+                    self.draw_connection(
+                        self.n.stations[u],
+                        self.n.stations[v],
+                        {line if isinstance(line, Connection) else self.n.lines[line] for line in lines},
+                    )
+                    for (u, v), lines in self.n.connections.items()
+                ),
+                *(self.draw_station(s) for s in self.n.stations.values()),
+            ],
         )
 
     def draw_connection(self, u: Station, v: Station, lines: set[Line | Connection]) -> svg.Element:
@@ -85,14 +91,17 @@ class Drawer:
             else:
                 n2 = (vo[0].coordinates - v.coordinates) / 8 * self.s.scale
 
-            elements.append(svg.Path(
-                stroke=line.colour,
-                stroke_width=self.s.line_thickness,
-                fill_opacity=0,
-                d=[
-                    svg.M(nu.x, nu.y),
-                    svg.C(nu.x + n1.x, nu.y + n1.y, nv.x + n2.x, nv.y + n2.y, nv.x, nv.y),
-                ]))
+            elements.append(
+                svg.Path(
+                    stroke=line.colour,
+                    stroke_width=self.s.line_thickness,
+                    fill_opacity=0,
+                    d=[
+                        svg.M(nu.x, nu.y),
+                        svg.C(nu.x + n1.x, nu.y + n1.y, nv.x + n2.x, nv.y + n2.y, nv.x, nv.y),
+                    ],
+                )
+            )
         return svg.G(elements=elements)
 
     def draw_station(self, station: Station) -> svg.Element:
@@ -102,38 +111,40 @@ class Drawer:
         t = (c1 if c1.x > c2.x else c2) + vector.obj(x=4, y=1)
         if t.x < c.x:
             t += 2 * (c - t)
-        return svg.G(elements=[
-            svg.Path(
-                stroke="#000",
-                stroke_width=5.0,
-                stroke_linecap="round",
-                d=[
-                    svg.M(c1.x, c1.y),
-                    svg.L(c2.x, c2.y),
-                ]
-            ),
-            svg.Path(
-                stroke="#fff",
-                stroke_width=2.5,
-                stroke_linecap="round",
-                d=[
-                    svg.M(c1.x, c1.y),
-                    svg.L(c2.x, c2.y),
-                ]
-            ),
-            # svg.Circle(
-            #     fill="#ffffff",
-            #     stroke="#000000",
-            #     stroke_width=1.5,
-            #     cx=c.x,
-            #     cy=c.y,
-            #     r=2.5
-            # ),
-            svg.Text(
-                text=station.name,
-                x=t.x,
-                y=t.y,
-                font_size=3,
-                text_anchor="start",
-            )
-        ])
+        return svg.G(
+            elements=[
+                svg.Path(
+                    stroke="#000",
+                    stroke_width=5.0,
+                    stroke_linecap="round",
+                    d=[
+                        svg.M(c1.x, c1.y),
+                        svg.L(c2.x, c2.y),
+                    ],
+                ),
+                svg.Path(
+                    stroke="#fff",
+                    stroke_width=2.5,
+                    stroke_linecap="round",
+                    d=[
+                        svg.M(c1.x, c1.y),
+                        svg.L(c2.x, c2.y),
+                    ],
+                ),
+                # svg.Circle(
+                #     fill="#ffffff",
+                #     stroke="#000000",
+                #     stroke_width=1.5,
+                #     cx=c.x,
+                #     cy=c.y,
+                #     r=2.5
+                # ),
+                svg.Text(
+                    text=station.name,
+                    x=t.x,
+                    y=t.y,
+                    font_size=3,
+                    text_anchor="start",
+                ),
+            ]
+        )

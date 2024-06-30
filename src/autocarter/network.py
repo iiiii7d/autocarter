@@ -11,7 +11,9 @@ import vector
 class Network:
     lines: dict[uuid.UUID, Line] = dataclasses.field(default_factory=dict)
     stations: dict[uuid.UUID, Station] = dataclasses.field(default_factory=dict)
-    connections: dict[tuple[uuid.UUID, uuid.UUID], set[uuid.UUID | Connection]] = dataclasses.field(default_factory=dict)
+    connections: dict[tuple[uuid.UUID, uuid.UUID], set[uuid.UUID | Connection]] = dataclasses.field(
+        default_factory=dict
+    )
 
     def add_line(self, line: Line) -> Line:
         self.lines[line.id] = line
@@ -39,9 +41,14 @@ class Station:
     line_coordinates: dict[uuid.UUID, float] = dataclasses.field(default_factory=dict)
 
     def connections(self, n: Network) -> list[tuple[Station, set[Connection | Line]]]:
-        return [(n.stations[k[0] if self.id == k[1] else k[1]],
-                 {(vv if isinstance(vv, Connection) else n.lines[vv]) for vv in v}) for k, v in n.connections.items() if
-                self.id in k]
+        return [
+            (
+                n.stations[k[0] if self.id == k[1] else k[1]],
+                {(vv if isinstance(vv, Connection) else n.lines[vv]) for vv in v},
+            )
+            for k, v in n.connections.items()
+            if self.id in k
+        ]
 
     def connections2(self, n: Network) -> dict[Line, list[Station]]:
         return {line: [s for s, ls in self.connections(n) if line in ls] for line in self.lines(n)}
@@ -54,12 +61,13 @@ class Station:
         if len(conn) == 1:
             self.tangent = (conn[0][0].coordinates - self.coordinates).unit().rotateZ(math.pi / 2)
         else:
-            self.tangent = sum(((a.coordinates - self.coordinates).unit() for a, _ in conn),
-                               start=vector.obj(x=0, y=0)).unit()
+            self.tangent = sum(
+                ((a.coordinates - self.coordinates).unit() for a, _ in conn), start=vector.obj(x=0, y=0)
+            ).unit()
 
     def calculate_line_coordinates(self, n: Network):
         lines = self.lines(n)
-        self.line_coordinates = {line.id: i - (len(lines) - 1)/2 for i, line in enumerate(lines)}
+        self.line_coordinates = {line.id: i - (len(lines) - 1) / 2 for i, line in enumerate(lines)}
 
 
 @dataclasses.dataclass(frozen=True)
