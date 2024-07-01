@@ -64,6 +64,10 @@ class Station:
             self.tangent = sum(
                 ((a.coordinates - self.coordinates).unit() for a, _ in conn), start=vector.obj(x=0, y=0)
             ).unit()
+        if self.tangent == vector.obj(x=0, y=0) and len(conn) >= 1:
+            self.tangent = (conn[0][0].coordinates - self.coordinates).unit().rotateZ(math.pi / 2)
+        if self.tangent.x < 0 or (self.tangent.x == 0 and self.tangent.y < 0):
+            self.tangent = -self.tangent
 
     def calculate_line_coordinates(self, n: Network):
         lines = self.lines(n)

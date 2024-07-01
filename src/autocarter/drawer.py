@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import math
 
 import svg
 import vector
@@ -14,6 +15,7 @@ class Style:
     padding: float = 10.0
     scale: float = 1.0
     offset: vector.Vector2D = dataclasses.field(default_factory=lambda: vector.obj(x=0, y=0))
+    stiffness: float = 8.0
 
 
 @dataclasses.dataclass
@@ -72,14 +74,14 @@ class Drawer:
             vo = None if len(vc) <= 1 else vc[0] if vc[1].coordinates == u.coordinates else vc[1]
 
             if len(uc) > 1:
-                n1 = (v.coordinates - uo.coordinates) / 8 * self.s.scale
+                n1 = (v.coordinates - uo.coordinates) / self.s.stiffness * self.s.scale
             else:
-                n1 = (v.coordinates - u.coordinates) / 8 * self.s.scale
+                n1 = (v.coordinates - u.coordinates) / self.s.stiffness * self.s.scale
 
             if len(vc) > 1:
-                n2 = (u.coordinates - vo.coordinates) / 8 * self.s.scale
+                n2 = (u.coordinates - vo.coordinates) / self.s.stiffness * self.s.scale
             else:
-                n2 = (u.coordinates - v.coordinates) / 8 * self.s.scale
+                n2 = (u.coordinates - v.coordinates) / self.s.stiffness * self.s.scale
 
             elements.append(
                 svg.Path(
@@ -135,6 +137,13 @@ class Drawer:
                     y=t.y,
                     font_size=3,
                     text_anchor="start",
+                    transform=[
+                        svg.Rotate(
+                            station.tangent.phi / math.pi * 180,
+                            (c1 if c1.x > c2.x else c2).x,
+                            (c1 if c1.x > c2.x else c2).y,
+                        )
+                    ],
                 ),
             ]
         )

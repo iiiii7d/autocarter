@@ -6,7 +6,7 @@ import vector
 from autocarter.drawer import Drawer, Style
 from autocarter.network import Line, Network, Station
 
-with open("data.json") as f:
+with open("../data.json") as f:
     data = json.load(f)["rail"]
 n = Network()
 company_uuid, company_json = next((k, v) for k, v in data["company"].items() if v["name"] == "nFLR")
@@ -81,5 +81,5 @@ for station_uuid in company_json["stations"]:
 n.finalise()
 
 s = Drawer(n, Style(scale=0.03)).draw()
-with open("out.svg", "w") as f:
+with open("../out.svg", "w") as f:
     f.write(str(s))
