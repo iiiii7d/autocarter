@@ -71,7 +71,7 @@ class Station:
 
     def calculate_line_coordinates(self, n: Network):
         lines = self.lines(n)
-        self.line_coordinates = {line.id: i - (len(lines) - 1) / 2 for i, line in enumerate(lines)}
+        self.line_coordinates = {line.id: i - (len(lines) - 1) / 2 for i, line in enumerate(sorted(lines))}
 
 
 @dataclasses.dataclass(frozen=True)
@@ -79,6 +79,9 @@ class Line:
     colour: str
     name: str
     id: uuid.UUID = dataclasses.field(default_factory=uuid.uuid4)
+
+    def __lt__(self, other):
+        return self.name < other.name
 
 
 @dataclasses.dataclass(frozen=True)
