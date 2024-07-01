@@ -1,0 +1,39 @@
+import itertools
+import json
+import random
+
+import vector
+
+from autocarter.drawer import Drawer, Style
+from autocarter.network import Line, Network, Station
+
+with open("./stops.json") as f:
+    stops = json.load(f)
+with open("./services.json") as f:
+    services = json.load(f)
+
+n = Network()
+
+for stop_id, stop_json in stops.items():
+    n.add_station(
+        Station(
+            id=stop_id, name=stop_json[2].replace("&", "&amp;"), coordinates=vector.obj(x=stop_json[0], y=-stop_json[1])
+        )
+    )
+
+for line_id, line_json in services.items():
+    colour = (
+        "#" + random.choice("0123456789abcdef") + random.choice("0123456789abcdef") + random.choice("0123456789abcdef")
+    )
+    for i, route in enumerate(line_json["routes"]):
+        line = n.add_line(Line(id=line_id + "_" + str(i), name=line_id, colour=colour))
+        n.stations[route[0]].terminus.add(line.id)
+        n.stations[route[-1]].terminus.add(line.id)
+        for s1_id, s2_id in itertools.pairwise(route):
+            n.connect(n.stations[s1_id], n.stations[s2_id], line)
+
+n.finalise()
+
+s = Drawer(n, Style(scale=50000.0, stiffness=4.0)).draw()
+with open("./out.svg", "w") as f:
+    f.write(str(s))

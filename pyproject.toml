@@ -26,10 +26,9 @@ classifiers = [
 ]
 dependencies = [
   "click",
-  "sympy",
-  "networkx",
   "svg.py",
   "vector",
+  "rich",
 ]
 
 [project.urls]

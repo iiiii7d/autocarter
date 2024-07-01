@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import dataclasses
 import math
+import uuid
 
 import svg
 import vector
+from rich.progress import track
 
 from autocarter.network import Connection, Line, Network, Station
 
@@ -56,9 +58,9 @@ class Drawer:
                         self.n.stations[v],
                         {line if isinstance(line, Connection) else self.n.lines[line] for line in lines},
                     )
-                    for (u, v), lines in self.n.connections.items()
+                    for (u, v), lines in track(self.n.connections.items(), description="Drawing connections")
                 ),
-                *(self.draw_station(s) for s in self.n.stations.values()),
+                *(self.draw_station(s) for s in track(self.n.stations.values(), description="Drawing stations")),
             ],
         )
 
@@ -69,29 +71,65 @@ class Drawer:
             nv = self.move_vec(v.coordinates) + v.line_coordinates[line.id] * self.s.line_thickness * v.tangent
 
             uc = u.connections2(self.n)[line]
-            uo = None if len(uc) <= 1 else uc[0] if uc[1].coordinates == v.coordinates else uc[1]
+            uo = (
+                None
+                if len(uc) <= 1 or line.id in u.terminus
+                else uc[0]
+                if uc[1].coordinates == v.coordinates
+                else uc[1]
+            )
             vc = v.connections2(self.n)[line]
-            vo = None if len(vc) <= 1 else vc[0] if vc[1].coordinates == u.coordinates else vc[1]
+            vo = (
+                None
+                if len(vc) <= 1 or line.id in v.terminus
+                else vc[0]
+                if vc[1].coordinates == u.coordinates
+                else vc[1]
+            )
 
-            if len(uc) > 1:
-                n1 = (v.coordinates - uo.coordinates) / self.s.stiffness * self.s.scale
+            if uo is not None:
+                n1 = (
+                    (v.coordinates - uo.coordinates).unit()
+                    * (v.coordinates - u.coordinates).rho
+                    / self.s.stiffness
+                    * self.s.scale
+                )
             else:
                 n1 = (v.coordinates - u.coordinates) / self.s.stiffness * self.s.scale
 
-            if len(vc) > 1:
-                n2 = (u.coordinates - vo.coordinates) / self.s.stiffness * self.s.scale
+            if vo is not None:
+                n2 = (
+                    (u.coordinates - vo.coordinates).unit()
+                    * (u.coordinates - v.coordinates).rho
+                    / self.s.stiffness
+                    * self.s.scale
+                )
             else:
                 n2 = (u.coordinates - v.coordinates) / self.s.stiffness * self.s.scale
 
+            i = str(uuid.uuid4())
             elements.append(
-                svg.Path(
-                    stroke=line.colour,
-                    stroke_width=self.s.line_thickness,
-                    fill_opacity=0,
-                    d=[
-                        svg.M(nu.x, nu.y),
-                        svg.C(nu.x + n1.x, nu.y + n1.y, nv.x + n2.x, nv.y + n2.y, nv.x, nv.y),
-                    ],
+                svg.G(
+                    elements=[
+                        svg.Path(
+                            stroke=line.colour,
+                            stroke_width=self.s.line_thickness,
+                            fill_opacity=0,
+                            id=i,
+                            d=[
+                                svg.M(nu.x, nu.y),
+                                svg.C(nu.x + n1.x, nu.y + n1.y, nv.x + n2.x, nv.y + n2.y, nv.x, nv.y),
+                            ],
+                        ),
+                        svg.Text(
+                            font_size=3,
+                            text_anchor="middle",
+                            dy=1,
+                            font_weight="bold",
+                            font_family="sans-serif",
+                            elements=[svg.TextPath(href="#" + i, text=line.name, startOffset="50%")],
+                        ),
+                    ]
                 )
             )
         return svg.G(elements=elements)
@@ -136,6 +174,7 @@ class Drawer:
                     x=t.x,
                     y=t.y,
                     font_size=3,
+                    font_family="sans-serif",
                     text_anchor="start",
                     transform=[
                         svg.Rotate(
