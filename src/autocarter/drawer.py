@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import dataclasses
-import math
 
 import svg
 import vector
@@ -66,30 +65,21 @@ class Drawer:
         for line in lines:
             nu = self.move_vec(u.coordinates) + u.line_coordinates[line.id] * self.s.line_thickness * u.tangent
             nv = self.move_vec(v.coordinates) + v.line_coordinates[line.id] * self.s.line_thickness * v.tangent
-            # elements.append(svg.Path(
-            #     stroke=line.colour,
-            #     stroke_width=self.s.line_thickness,
-            #     d=[
-            #         svg.M(nu.x, nu.y),
-            #         svg.L(nv.x, nv.y),
-            #     ]))
-            uo = u.connections2(self.n)[line]
-            if len(uo) > 1:
-                n1 = (uo[1].coordinates - uo[0].coordinates) / 8 * self.s.scale
-                n1 = -n1 if n1.dot(nv - nu) <= 0 else n1
-                if (uo[0].coordinates - u.coordinates).dot(uo[1].coordinates - u.coordinates) > 0:
-                    n1 = n1.rotateZ(-math.pi / 2)
-            else:
-                n1 = (uo[0].coordinates - u.coordinates) / 8 * self.s.scale
 
-            vo = v.connections2(self.n)[line]
-            if len(vo) > 1:
-                n2 = (vo[1].coordinates - vo[0].coordinates) / 8 * self.s.scale
-                n2 = -n2 if n2.dot(nv - nu) >= 0 else n2
-                if (vo[0].coordinates - v.coordinates).dot(vo[1].coordinates - v.coordinates) > 0:
-                    n2 = n2.rotateZ(math.pi / 2)
+            uc = u.connections2(self.n)[line]
+            uo = None if len(uc) <= 1 else uc[0] if uc[1].coordinates == v.coordinates else uc[1]
+            vc = v.connections2(self.n)[line]
+            vo = None if len(vc) <= 1 else vc[0] if vc[1].coordinates == u.coordinates else vc[1]
+
+            if len(uc) > 1:
+                n1 = (v.coordinates - uo.coordinates) / 8 * self.s.scale
             else:
-                n2 = (vo[0].coordinates - v.coordinates) / 8 * self.s.scale
+                n1 = (v.coordinates - u.coordinates) / 8 * self.s.scale
+
+            if len(vc) > 1:
+                n2 = (u.coordinates - vo.coordinates) / 8 * self.s.scale
+            else:
+                n2 = (u.coordinates - v.coordinates) / 8 * self.s.scale
 
             elements.append(
                 svg.Path(
