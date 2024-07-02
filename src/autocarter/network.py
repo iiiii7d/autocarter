@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import dataclasses
-import functools
 import math
 import uuid
-from rich.progress import track
 
 import vector
+from rich.progress import track
 
 
 @dataclasses.dataclass

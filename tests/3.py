@@ -5,7 +5,7 @@ import random
 import vector
 
 from autocarter.drawer import Drawer, Style
-from autocarter.network import Line, Network, Station, Connection
+from autocarter.network import Connection, Line, Network, Station
 
 with open("./stops.json") as f:
     stops = json.load(f)
