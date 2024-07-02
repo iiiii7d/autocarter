@@ -18,6 +18,7 @@ class Style:
     scale: float = 1.0
     offset: vector.Vector2D = dataclasses.field(default_factory=lambda: vector.obj(x=0, y=0))
     stiffness: float = 8.0
+    station_dots: bool = False
 
 
 @dataclasses.dataclass
@@ -67,6 +68,32 @@ class Drawer:
     def draw_connection(self, u: Station, v: Station, lines: set[Line | Connection]) -> svg.Element:
         elements = []
         for line in lines:
+            if isinstance(line, Connection):
+                cu = self.move_vec(u.coordinates)
+                cv = self.move_vec(v.coordinates)
+
+                cu1 = cu + min(u.line_coordinates.values() or (0,)) * self.s.line_thickness * u.tangent
+                cu2 = cu + max(u.line_coordinates.values() or (0,)) * self.s.line_thickness * u.tangent
+                lu = cu1 if ((cu1 - cv).rho < (cu2 - cv).rho) else cu2
+
+                cv1 = cv + min(v.line_coordinates.values() or (0,)) * self.s.line_thickness * v.tangent
+                cv2 = cv + max(v.line_coordinates.values() or (0,)) * self.s.line_thickness * v.tangent
+                lv = cv1 if ((cv1 - cu).rho < (cv2 - cu).rho) else cv2
+
+                elements.append(
+                    svg.Path(
+                        stroke_width=self.s.line_thickness,
+                        stroke="#000",
+                        fill_opacity=0,
+                        stroke_dasharray=[1, 1],
+                        d=[
+                            svg.M(lu.x, lu.y),
+                            svg.L(lv.x, lv.y),
+                        ],
+                    ),
+                )
+                continue
+
             nu = self.move_vec(u.coordinates) + u.line_coordinates[line.id] * self.s.line_thickness * u.tangent
             nv = self.move_vec(v.coordinates) + v.line_coordinates[line.id] * self.s.line_thickness * v.tangent
 
@@ -141,11 +168,24 @@ class Drawer:
         t = (c1 if c1.x > c2.x else c2) + vector.obj(x=4, y=1)
         if t.x < c.x:
             t += 2 * (c - t)
+        line_dots = []
+        if self.s.station_dots:
+            for line_uuid, n in station.line_coordinates.items():
+                line = self.n.lines[line_uuid]
+                cl = c + n * self.s.line_thickness * station.tangent
+                line_dots.append(
+                    svg.Circle(
+                        cx=cl.x,
+                        cy=cl.y,
+                        r=1.0,
+                        fill=line.colour,
+                    )
+                )
         return svg.G(
             elements=[
                 svg.Path(
-                    stroke="#000",
-                    stroke_width=5.0,
+                    stroke="#aaa",
+                    stroke_width=3.5 if self.s.station_dots else 5.0,
                     stroke_linecap="round",
                     d=[
                         svg.M(c1.x, c1.y),
@@ -161,14 +201,6 @@ class Drawer:
                         svg.L(c2.x, c2.y),
                     ],
                 ),
-                # svg.Circle(
-                #     fill="#ffffff",
-                #     stroke="#000000",
-                #     stroke_width=1.5,
-                #     cx=c.x,
-                #     cy=c.y,
-                #     r=2.5
-                # ),
                 svg.Text(
                     text=station.name,
                     x=t.x,
@@ -184,5 +216,6 @@ class Drawer:
                         )
                     ],
                 ),
+                *line_dots,
             ]
         )
