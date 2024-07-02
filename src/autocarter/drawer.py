@@ -83,7 +83,7 @@ class Drawer:
                 elements.append(
                     svg.Path(
                         stroke_width=self.s.line_thickness,
-                        stroke="#000",
+                        stroke="#888",
                         fill_opacity=0,
                         stroke_dasharray=[1, 1],
                         d=[
@@ -184,7 +184,7 @@ class Drawer:
         return svg.G(
             elements=[
                 svg.Path(
-                    stroke="#aaa",
+                    stroke="#000",
                     stroke_width=3.5 if self.s.station_dots else 5.0,
                     stroke_linecap="round",
                     d=[
