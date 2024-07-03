@@ -17,7 +17,7 @@ class Style:
     padding: float = 10.0
     scale: float = 1.0
     offset: vector.Vector2D = dataclasses.field(default_factory=lambda: vector.obj(x=0, y=0))
-    stiffness: float = 8.0
+    stiffness: float = 3.0
     station_dots: bool = False
 
 

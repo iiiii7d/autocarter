@@ -43,7 +43,7 @@ col = {
 for line_uuid in company_json["lines"]:
     line_json = data["line"][line_uuid]
     colour = col.get(line_json["code"], "#888")
-    n.add_line(Line(id=line_uuid, name=line_json["name"], colour=colour))
+    n.add_line(Line(id=line_uuid, name=line_json["name"].removeprefix("MRT ").removesuffix(" Line"), colour=colour))
 
 for station_uuid in company_json["stations"]:
     station_json = data["station"][station_uuid]
@@ -72,6 +72,6 @@ for station_uuid in company_json["stations"]:
 
 n.finalise()
 
-s = Drawer(n, Style(scale=0.05, stiffness=6.0)).draw()
+s = Drawer(n, Style(scale=0.05)).draw()
 with open("./out.svg", "w") as f:
     f.write(str(s))

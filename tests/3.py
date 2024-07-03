@@ -42,6 +42,6 @@ for stn_list in stations.values():
 
 n.finalise()
 
-s = Drawer(n, Style(scale=75000.0, stiffness=4.0, station_dots=True)).draw()
+s = Drawer(n, Style(scale=75000.0, station_dots=True)).draw()
 with open("./out.svg", "w") as f:
     f.write(str(s))
