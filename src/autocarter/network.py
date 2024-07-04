@@ -44,6 +44,26 @@ class Station:
 
     _connections2: dict[Line, list[Station]] | None = None
 
+    def merge_into(self, n: Network, s: Station):
+        to_add = {}
+        to_delete = []
+        for (u, v), conn in n.connections.items():
+            if u == self.id:
+                nu, nv = sorted((u, s.id))
+                to_add[nu, nv] = conn
+                to_delete.append((u, v))
+            elif v == self.id:
+                nu, nv = sorted((s.id, v))
+                to_add[nu, nv] = conn
+                to_delete.append((u, v))
+        for k, v in to_add.items():
+            n.connections.setdefault(k, set()).update(v)
+        for k in to_delete:
+            del n.connections[k]
+
+        s.terminus.update(self.terminus)
+        del n.stations[self.id]
+
     def connections(self, n: Network) -> list[tuple[Station, set[Connection | Line]]]:
         return [
             (
