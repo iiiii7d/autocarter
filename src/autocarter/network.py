@@ -63,7 +63,7 @@ class Station:
         return {a for _, b in self.connections(n) for a in b if isinstance(a, Line)}
 
     def calculate_tangent(self, n: Network):
-        conn = [ss for s, l in self.connections(n) for ss in (s,) * len(l)]
+        conn = [ss for s, l in self.connections(n) for ss in (s,) * len([a for a in l if isinstance(a, Line)])]
         if len(set((a.coordinates.x, a.coordinates.y) for a in conn)) == 1:
             self.tangent = (conn[0].coordinates - self.coordinates).unit().rotateZ(math.pi / 2)
         else:
