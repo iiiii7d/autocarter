@@ -14,7 +14,7 @@ from autocarter.network import Connection, Line, Network, Station
 @dataclasses.dataclass
 class Style:
     line_thickness: float = 2.0
-    padding: float = 10.0
+    padding: float = 64.0
     scale: float = 1.0
     offset: vector.Vector2D = dataclasses.field(default_factory=lambda: vector.obj(x=0, y=0))
     stiffness: float = 3.0
@@ -135,18 +135,27 @@ class Drawer:
                 n2 = (u.coordinates - v.coordinates) / self.s.stiffness * self.s.scale
 
             i = str(uuid.uuid4())
+            colours: tuple[str] = line.colour if isinstance(line.colour, tuple) else (line.colour,)
             elements.append(
                 svg.G(
                     elements=[
-                        svg.Path(
-                            stroke=line.colour,
-                            stroke_width=self.s.line_thickness,
-                            fill_opacity=0,
-                            id=i,
-                            d=[
-                                svg.M(nu.x, nu.y),
-                                svg.C(nu.x + n1.x, nu.y + n1.y, nv.x + n2.x, nv.y + n2.y, nv.x, nv.y),
-                            ],
+                        *(
+                            svg.Path(
+                                stroke=colour,
+                                stroke_dasharray=[
+                                    8 * self.s.line_thickness,
+                                    8 * self.s.line_thickness * (len(colours) - 1),
+                                ],
+                                stroke_dashoffset=8 * offset * self.s.line_thickness,
+                                stroke_width=self.s.line_thickness,
+                                fill_opacity=0,
+                                id=i,
+                                d=[
+                                    svg.M(nu.x, nu.y),
+                                    svg.C(nu.x + n1.x, nu.y + n1.y, nv.x + n2.x, nv.y + n2.y, nv.x, nv.y),
+                                ],
+                            )
+                            for offset, colour in enumerate(colours)
                         ),
                         svg.Text(
                             font_size=3,
@@ -178,7 +187,7 @@ class Drawer:
                         cx=cl.x,
                         cy=cl.y,
                         r=1.0,
-                        fill=line.colour,
+                        fill=line.colour[0] if isinstance(line.colour, tuple) else line.colour,
                     )
                 )
         return svg.G(

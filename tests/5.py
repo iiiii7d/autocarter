@@ -9,41 +9,15 @@ from autocarter.network import Line, Network, Station
 with open("./data.json") as f:
     data = json.load(f)["rail"]
 n = Network()
-company_uuid, company_json = next((k, v) for k, v in data["company"].items() if v["name"] == "IntraRail")
-
-col = {
-    "6": ["#d16d8f"],
-    "7": ["#d16d8f", "#4ebdb8", "#2f4bb3"],
-    "15": ["#e6e630"],
-    "17": ["#4ebdb8", "#00da37"],
-    "29": ["#d98030", "#00da37", "#9a3030"],
-    "32": ["#e6e630"],
-    "34": ["#d98030", "#d3b2a2", "#9a3030"],
-    "38": ["#00da37"],
-    "40": ["#00da37"],
-    "43": ["#2f4bb3"],
-    "48": ["#d3b2a2"],
-    "49": ["#b34bd9"],
-    "50": ["#b34bd9", "#ff0000"],
-    "51": ["#ff0000"],
-    "52": ["#ff0000"],
-    "63": ["#986d4c"],
-    "64": ["#986d4c"],
-}
+company_uuid, company_json = next((k, v) for k, v in data["company"].items() if v["name"] == "BluRail")
 
 for line_uuid in company_json["lines"]:
     line_json = data["line"][line_uuid]
     name = line_json["name"]
     colour = (
-        "#3d6edd"
-        if line_json["code"].startswith("MCR")
-        or line_json["code"].startswith("LM")
-        or line_json["code"].startswith("S")
-        else tuple(col[line_json["code"]])
-        if line_json["code"] in col
-        else "#888"
+        "#c01c22" if line_json["code"].endswith("X") else "#0a7ec3" if line_json["code"][-1].isdigit() else "#0c4a9e"
     )
-    n.add_line(Line(id=line_uuid, name=line_json["code"].replace("<", "&lt;").replace(">", "&gt;"), colour=colour))
+    n.add_line(Line(id=line_uuid, name=line_json["code"], colour=colour))
 
 for station_uuid in company_json["stations"]:
     station_json = data["station"][station_uuid]

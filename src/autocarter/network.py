@@ -64,7 +64,7 @@ class Station:
 
     def calculate_tangent(self, n: Network):
         conn = [ss for s, l in self.connections(n) for ss in (s,) * len(l)]
-        if len(conn) == 1:
+        if len(set((a.coordinates.x, a.coordinates.y) for a in conn)) == 1:
             self.tangent = (conn[0].coordinates - self.coordinates).unit().rotateZ(math.pi / 2)
         else:
             self.tangent = sum(
@@ -82,7 +82,7 @@ class Station:
 
 @dataclasses.dataclass(frozen=True)
 class Line:
-    colour: str
+    colour: str | tuple[str]
     name: str
     id: uuid.UUID = dataclasses.field(default_factory=uuid.uuid4)
 
