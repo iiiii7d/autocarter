@@ -52,8 +52,8 @@ class Station:
                 nu, nv = sorted((s.id, v))
                 to_add[nu, nv] = conn
                 to_delete.append((u, v))
-            elif v == self.id:
-                nu, nv = sorted((u, self.id))
+            if v == self.id:
+                nu, nv = sorted((u, s.id))
                 to_add[nu, nv] = conn
                 to_delete.append((u, v))
         for k, v in to_add.items():
