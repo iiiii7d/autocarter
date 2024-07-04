@@ -49,11 +49,11 @@ class Station:
         to_delete = []
         for (u, v), conn in n.connections.items():
             if u == self.id:
-                nu, nv = sorted((u, s.id))
+                nu, nv = sorted((s.id, v))
                 to_add[nu, nv] = conn
                 to_delete.append((u, v))
             elif v == self.id:
-                nu, nv = sorted((s.id, v))
+                nu, nv = sorted((u, self.id))
                 to_add[nu, nv] = conn
                 to_delete.append((u, v))
         for k, v in to_add.items():
