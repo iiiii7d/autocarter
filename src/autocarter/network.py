@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import itertools
 import math
 import uuid
 
@@ -86,6 +87,15 @@ class Station:
         conn = [ss for s, l in self.connections(n) for ss in (s,) * len([a for a in l if isinstance(a, Line)])]
         if len(set((a.coordinates.x, a.coordinates.y) for a in conn)) == 1:
             self.tangent = (conn[0].coordinates - self.coordinates).unit().rotateZ(math.pi / 2)
+        elif all(
+            (a.coordinates - self.coordinates).dot((b.coordinates - self.coordinates)) > 0
+            for a, b in itertools.combinations(conn, 2)
+        ):
+            self.tangent = (
+                sum(((a.coordinates - self.coordinates).unit() for a in conn), start=vector.obj(x=0, y=0))
+                .unit()
+                .rotateZ(math.pi / 2)
+            )
         else:
             self.tangent = sum(
                 ((a.coordinates - self.coordinates).unit() for a in conn), start=vector.obj(x=0, y=0)
