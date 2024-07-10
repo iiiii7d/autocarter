@@ -64,9 +64,15 @@ class Station:
 
         s.terminus.update(self.terminus)
         if isinstance(s.name, str):
-            s.name = {s.name, self.name}
+            if isinstance(self.name, str):
+                s.name = {s.name, self.name}
+            else:
+                s.name = {s.name, *self.name}
         else:
-            s.name.add(self.name)
+            if isinstance(self.name, str):
+                s.name.add(self.name)
+            else:
+                s.name.update(self.name)
         del n.stations[self.id]
 
     def connections(self, n: Network) -> list[tuple[Station, set[Connection | Line]]]:
