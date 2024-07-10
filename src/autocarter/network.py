@@ -36,7 +36,7 @@ class Network:
 
 @dataclasses.dataclass
 class Station:
-    name: str
+    name: str | set[str]
     coordinates: vector.Vector2D
     tangent: vector.Vector2D = dataclasses.field(default_factory=lambda: vector.obj(x=1, y=0))
     id: uuid.UUID = dataclasses.field(default_factory=uuid.uuid4)
@@ -63,6 +63,10 @@ class Station:
             del n.connections[k]
 
         s.terminus.update(self.terminus)
+        if isinstance(s.name, str):
+            s.name = {s.name, self.name}
+        else:
+            s.name.add(self.name)
         del n.stations[self.id]
 
     def connections(self, n: Network) -> list[tuple[Station, set[Connection | Line]]]:

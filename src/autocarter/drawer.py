@@ -211,7 +211,7 @@ class Drawer:
                     ],
                 ),
                 svg.Text(
-                    text=station.name,
+                    text=station.name if isinstance(station.name, str) else " / ".join(sorted(list(station.name))),
                     x=t.x,
                     y=t.y,
                     font_size=3,
