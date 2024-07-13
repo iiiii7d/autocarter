@@ -211,15 +211,15 @@ class Drawer:
                                     cx=cl.x,
                                     cy=cl.y,
                                     r=stroke.thickness_multiplier / 2,
-                                    fill=None,
+                                    fill_opacity=0,
                                     stroke=dash,
                                     stroke_width=stroke.thickness_multiplier,
                                     stroke_dasharray=[
-                                        math.tau * stroke.thickness_multiplier / len(stroke.dashes),
-                                        math.tau * stroke.thickness_multiplier,
+                                        math.pi * stroke.thickness_multiplier / len(stroke.dashes),
+                                        math.pi * stroke.thickness_multiplier,
                                     ],
                                     stroke_dashoffset=offset
-                                    * math.tau
+                                    * math.pi
                                     * stroke.thickness_multiplier
                                     / len(stroke.dashes),
                                 )
