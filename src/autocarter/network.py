@@ -8,6 +8,8 @@ import uuid
 import vector
 from rich.progress import track
 
+from autocarter.colour import Colour
+
 
 @dataclasses.dataclass
 class Network:
@@ -122,7 +124,7 @@ class Station:
 
 @dataclasses.dataclass(frozen=True)
 class Line:
-    colour: str | tuple[str]
+    colour: Colour
     name: str
     id: uuid.UUID = dataclasses.field(default_factory=uuid.uuid4)
 

@@ -9,16 +9,7 @@ import vector
 from rich.progress import track
 
 from autocarter.network import Connection, Line, Network, Station
-
-
-@dataclasses.dataclass
-class Style:
-    line_thickness: float = 2.0
-    padding: float = 64.0
-    scale: float = 1.0
-    offset: vector.Vector2D = dataclasses.field(default_factory=lambda: vector.obj(x=0, y=0))
-    stiffness: float = 3.0
-    station_dots: bool = False
+from autocarter.style import Style
 
 
 @dataclasses.dataclass
@@ -135,27 +126,16 @@ class Drawer:
                 n2 = (u.coordinates - v.coordinates) / self.s.stiffness * self.s.scale
 
             i = str(uuid.uuid4())
-            colours: tuple[str] = line.colour if isinstance(line.colour, tuple) else (line.colour,)
             elements.append(
                 svg.G(
                     elements=[
-                        *(
-                            svg.Path(
-                                stroke=colour,
-                                stroke_dasharray=[
-                                    8 * self.s.line_thickness,
-                                    8 * self.s.line_thickness * (len(colours) - 1),
-                                ],
-                                stroke_dashoffset=8 * offset * self.s.line_thickness,
-                                stroke_width=self.s.line_thickness,
-                                fill_opacity=0,
-                                id=i,
-                                d=[
-                                    svg.M(nu.x, nu.y),
-                                    svg.C(nu.x + n1.x, nu.y + n1.y, nv.x + n2.x, nv.y + n2.y, nv.x, nv.y),
-                                ],
-                            )
-                            for offset, colour in enumerate(colours)
+                        line.colour.svg(
+                            self.s,
+                            i=i,
+                            d=[
+                                svg.M(nu.x, nu.y),
+                                svg.C(nu.x + n1.x, nu.y + n1.y, nv.x + n2.x, nv.y + n2.y, nv.x, nv.y),
+                            ],
                         ),
                         svg.Text(
                             font_size=3,

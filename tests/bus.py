@@ -4,7 +4,9 @@ import random
 
 import vector
 
-from autocarter.drawer import Drawer, Style
+from autocarter.colour import Colour
+from autocarter.drawer import Drawer
+from autocarter.style import Style
 from autocarter.network import Connection, Line, Network, Station
 
 with open("./stops.json") as f:
@@ -30,7 +32,7 @@ for line_id, line_json in services.items():
         "#" + random.choice("0123456789abcdef") + random.choice("0123456789abcdef") + random.choice("0123456789abcdef")
     )
     for i, route in enumerate(line_json["routes"]):
-        line = n.add_line(Line(id=line_id + "_" + str(i), name=line_id, colour=colour))
+        line = n.add_line(Line(id=line_id + "_" + str(i), name=line_id, colour=Colour.solid(colour)))
         n.stations[route[0]].terminus.add(line.id)
         n.stations[route[-1]].terminus.add(line.id)
         for s1_id, s2_id in itertools.pairwise(route):
