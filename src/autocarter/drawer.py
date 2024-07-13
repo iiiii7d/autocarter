@@ -3,14 +3,17 @@ from __future__ import annotations
 import dataclasses
 import math
 import uuid
+from typing import TYPE_CHECKING
 
 import svg
 import vector
 from rich.progress import track
 
-from autocarter.colour import Colour
 from autocarter.network import Connection, Line, Network, Station
 from autocarter.style import Style
+
+if TYPE_CHECKING:
+    from autocarter.colour import Colour
 
 
 @dataclasses.dataclass
@@ -245,7 +248,7 @@ class Drawer:
                     ],
                 ),
                 svg.Text(
-                    text=station.name if isinstance(station.name, str) else " / ".join(sorted(list(station.name))),
+                    text=station.name if isinstance(station.name, str) else " / ".join(sorted(station.name)),
                     x=t.x,
                     y=t.y,
                     font_size=3,

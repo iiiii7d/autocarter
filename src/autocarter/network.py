@@ -4,11 +4,13 @@ import dataclasses
 import itertools
 import math
 import uuid
+from typing import TYPE_CHECKING
 
 import vector
 from rich.progress import track
 
-from autocarter.colour import Colour
+if TYPE_CHECKING:
+    from autocarter.colour import Colour
 
 
 @dataclasses.dataclass
@@ -70,11 +72,10 @@ class Station:
                 s.name = {s.name, self.name}
             else:
                 s.name = {s.name, *self.name}
+        elif isinstance(self.name, str):
+            s.name.add(self.name)
         else:
-            if isinstance(self.name, str):
-                s.name.add(self.name)
-            else:
-                s.name.update(self.name)
+            s.name.update(self.name)
         del n.stations[self.id]
 
     def connections(self, n: Network) -> list[tuple[Station, set[Connection | Line]]]:
@@ -97,10 +98,10 @@ class Station:
 
     def calculate_tangent(self, n: Network):
         conn = [ss for s, l in self.connections(n) for ss in (s,) * len([a for a in l if isinstance(a, Line)])]
-        if len(set((a.coordinates.x, a.coordinates.y) for a in conn)) == 1:
+        if len({(a.coordinates.x, a.coordinates.y) for a in conn}) == 1:
             self.tangent = (conn[0].coordinates - self.coordinates).unit().rotateZ(math.pi / 2)
         elif all(
-            (a.coordinates - self.coordinates).dot((b.coordinates - self.coordinates)) > 0
+            (a.coordinates - self.coordinates).dot(b.coordinates - self.coordinates) > 0
             for a, b in itertools.combinations(conn, 2)
         ):
             self.tangent = (

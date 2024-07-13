@@ -6,8 +6,8 @@ import vector
 
 from autocarter.colour import Colour
 from autocarter.drawer import Drawer
-from autocarter.style import Style
 from autocarter.network import Connection, Line, Network, Station
+from autocarter.style import Style
 
 with open("./stops.json") as f:
     stops = json.load(f)

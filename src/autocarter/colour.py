@@ -3,10 +3,6 @@ from __future__ import annotations
 import dataclasses
 from typing import Self
 
-import svg
-
-from autocarter.style import Style
-
 
 @dataclasses.dataclass(frozen=True)
 class Colour:
