@@ -167,7 +167,7 @@ class Drawer:
                         cx=cl.x,
                         cy=cl.y,
                         r=1.0,
-                        fill=line.colour.strokes[0].colour[0] if isinstance(line.colour.strokes[0].colour, tuple) else line.colour.strokes[0].colour,
+                        fill=line.colour.strokes[0].dashes[0] if isinstance(line.colour.strokes[0].dashes, tuple) else line.colour.strokes[0].dashes,
                     )
                 )
         return svg.G(
