@@ -215,10 +215,10 @@ class Drawer:
                                     stroke=dash,
                                     stroke_width=stroke.thickness_multiplier,
                                     stroke_dasharray=[
-                                        math.pi * stroke.thickness_multiplier / len(stroke.dashes),
+                                        1.1 * math.pi * stroke.thickness_multiplier / len(stroke.dashes),
                                         math.pi * stroke.thickness_multiplier,
                                     ],
-                                    stroke_dashoffset=offset
+                                    stroke_dashoffset=-offset
                                     * math.pi
                                     * stroke.thickness_multiplier
                                     / len(stroke.dashes),
