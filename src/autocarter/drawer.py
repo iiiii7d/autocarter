@@ -8,6 +8,7 @@ import svg
 import vector
 from rich.progress import track
 
+from autocarter.colour import Colour
 from autocarter.network import Connection, Line, Network, Station
 from autocarter.style import Style
 
@@ -55,6 +56,37 @@ class Drawer:
                 *(self.draw_station(s) for s in track(self.n.stations.values(), description="Drawing stations")),
             ],
         )
+
+    def _draw_strokes(self, colour: Colour, i: str | None = None, d: list[svg.PathData] | None = None):
+        elements = []
+        for stroke in colour.strokes:
+            if isinstance(stroke.dashes, str):
+                elements.append(
+                    svg.Path(
+                        stroke=stroke.dashes,
+                        stroke_width=stroke.thickness_multiplier * self.s.line_thickness,
+                        fill_opacity=0,
+                        id=i,
+                        d=d,
+                    )
+                )
+            else:
+                for offset, colours in enumerate(stroke.dashes):
+                    elements.append(
+                        svg.Path(
+                            stroke=colours,
+                            stroke_dasharray=[
+                                stroke.dash_length * self.s.line_thickness,
+                                stroke.dash_length * self.s.line_thickness * (len(stroke.dashes) - 1),
+                            ],
+                            stroke_dashoffset=stroke.dash_length * offset * self.s.line_thickness,
+                            stroke_width=stroke.thickness_multiplier * self.s.line_thickness,
+                            fill_opacity=0,
+                            id=i,
+                            d=d,
+                        )
+                    )
+        return svg.G(elements=elements)
 
     def draw_connection(self, u: Station, v: Station, lines: set[Line | Connection]) -> svg.Element:
         elements = []
@@ -129,8 +161,8 @@ class Drawer:
             elements.append(
                 svg.G(
                     elements=[
-                        line.colour.svg(
-                            self.s,
+                        self._draw_strokes(
+                            line.colour,
                             i=i,
                             d=[
                                 svg.M(nu.x, nu.y),
@@ -162,14 +194,33 @@ class Drawer:
             for line_uuid, n in station.line_coordinates.items():
                 line = self.n.lines[line_uuid]
                 cl = c + n * self.s.line_thickness * station.tangent
-                line_dots.append(
-                    svg.Circle(
-                        cx=cl.x,
-                        cy=cl.y,
-                        r=1.0,
-                        fill=line.colour.strokes[0].dashes[0] if isinstance(line.colour.strokes[0].dashes, tuple) else line.colour.strokes[0].dashes,
-                    )
-                )
+                for stroke in line.colour.strokes:
+                    if isinstance(stroke.dashes, str):
+                        line_dots.append(
+                            svg.Circle(
+                                cx=cl.x,
+                                cy=cl.y,
+                                r=stroke.thickness_multiplier,
+                                fill=stroke.dashes,
+                            )
+                        )
+                    else:
+                        for offset, dash in enumerate(stroke.dashes):
+                            line_dots.append(
+                                svg.Circle(
+                                    cx=cl.x,
+                                    cy=cl.y,
+                                    r=stroke.thickness_multiplier / 2,
+                                    fill=None,
+                                    stroke=dash,
+                                    stroke_width=stroke.thickness_multiplier,
+                                    stroke_dasharray=[
+                                        math.tau * stroke.thickness_multiplier / len(stroke.dashes),
+                                        math.tau * stroke.thickness_multiplier,
+                                    ],
+                                    stroke_dashoffset=math.tau * stroke.thickness_multiplier / offset,
+                                )
+                            )
         return svg.G(
             elements=[
                 svg.Path(
