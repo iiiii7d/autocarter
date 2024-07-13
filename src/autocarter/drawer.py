@@ -218,7 +218,10 @@ class Drawer:
                                         math.tau * stroke.thickness_multiplier / len(stroke.dashes),
                                         math.tau * stroke.thickness_multiplier,
                                     ],
-                                    stroke_dashoffset=math.tau * stroke.thickness_multiplier / offset,
+                                    stroke_dashoffset=offset
+                                    * math.tau
+                                    * stroke.thickness_multiplier
+                                    / len(stroke.dashes),
                                 )
                             )
         return svg.G(
