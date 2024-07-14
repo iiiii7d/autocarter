@@ -166,6 +166,7 @@ class Drawer:
                             dy=1,
                             font_weight="bold",
                             font_family="sans-serif",
+                            fill=line.colour.text,
                             elements=[svg.TextPath(href="#" + i, text=line.name, startOffset="50%")],
                         ),
                     ]
