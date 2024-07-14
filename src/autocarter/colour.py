@@ -6,6 +6,8 @@ import functools
 import re
 from typing import Self
 
+LIGHTNESS_THRESHOLD = 0.4
+
 
 @dataclasses.dataclass(frozen=True)
 class Colour:
@@ -32,7 +34,7 @@ class Colour:
         g = int(2 * match.group(2) if match.group(2) is not None else match.group(5), 16)
         b = int(2 * match.group(3) if match.group(3) is not None else match.group(6), 16)
         lightness = colorsys.rgb_to_hls(r / 256, g / 256, b / 256)[1]
-        return "#000" if lightness > 0.4 else "#fff"
+        return "#000" if lightness > LIGHTNESS_THRESHOLD else "#fff"
 
 
 @dataclasses.dataclass(frozen=True)
