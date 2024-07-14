@@ -36,6 +36,8 @@ class Network:
     def finalise(self):
         for station in track(self.stations.values(), description="Finalising network"):
             station.calculate_tangent(self)
+            station.calculate_adjacent_stations(self)
+            station.calculate_line_coordinates(self)
 
 
 @dataclasses.dataclass
@@ -45,9 +47,7 @@ class Station:
     tangent: vector.Vector2D = dataclasses.field(default_factory=lambda: vector.obj(x=1, y=0))
     id: uuid.UUID = dataclasses.field(default_factory=uuid.uuid4)
     line_coordinates: dict[uuid.UUID, float] = dataclasses.field(default_factory=dict)
-    terminus: set[uuid.UUID] = dataclasses.field(default_factory=set)
-
-    _connections2: dict[Line, list[Station]] | None = None
+    adjacent_stations: dict[uuid.UUID, list[list[uuid.UUID]]] = dataclasses.field(default_factory=dict)
 
     def merge_into(self, n: Network, s: Station):
         to_add = {}
@@ -66,7 +66,7 @@ class Station:
         for k in to_delete:
             del n.connections[k]
 
-        s.terminus.update(self.terminus)
+        s.adjacent_stations.update(self.adjacent_stations)
         if isinstance(s.name, str):
             if isinstance(self.name, str):
                 s.name = {s.name, self.name}
@@ -88,10 +88,12 @@ class Station:
             if self.id in k
         ]
 
-    def connections2(self, n: Network) -> dict[Line, list[Station]]:
-        if self._connections2 is None:
-            self._connections2 = {line: [s for s, ls in self.connections(n) if line in ls] for line in self.lines(n)}
-        return self._connections2
+    def calculate_adjacent_stations(self, n: Network):
+        for line in self.lines(n):
+            if line.id in self.adjacent_stations:
+                continue
+            stations = [s for s, ls in self.connections(n) if line in ls]
+            self.adjacent_stations[line.id] = [[a.id] for a in stations]
 
     def lines(self, n: Network) -> set[Line]:
         return {a for _, b in self.connections(n) for a in b if isinstance(a, Line)}

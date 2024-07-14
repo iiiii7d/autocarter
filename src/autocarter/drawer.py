@@ -23,8 +23,6 @@ class Drawer:
 
     def __init__(self, n: Network, s: Style | None = None):
         s = s or Style()
-        for station in n.stations.values():
-            station.calculate_line_coordinates(n)
         s.offset = vector.obj(
             x=min(s.coordinates.x for s in n.stations.values()), y=min(s.coordinates.y for s in n.stations.values())
         )
@@ -123,21 +121,11 @@ class Drawer:
             nu = self.move_vec(u.coordinates) + u.line_coordinates[line.id] * self.s.line_thickness * u.tangent
             nv = self.move_vec(v.coordinates) + v.line_coordinates[line.id] * self.s.line_thickness * v.tangent
 
-            uc = u.connections2(self.n)[line]
-            uo = (
-                None
-                if len(uc) <= 1 or line.id in u.terminus
-                else uc[0]
-                if uc[1].coordinates == v.coordinates
-                else uc[1]
+            uo: vector.Vector2D | None = next(
+                (self.n.stations[b] for a in u.adjacent_stations[line.id] if v.id not in a for b in a), None
             )
-            vc = v.connections2(self.n)[line]
-            vo = (
-                None
-                if len(vc) <= 1 or line.id in v.terminus
-                else vc[0]
-                if vc[1].coordinates == u.coordinates
-                else vc[1]
+            vo: vector.Vector2D | None = next(
+                (self.n.stations[b] for a in v.adjacent_stations[line.id] if u.id not in a for b in a), None
             )
 
             if uo is not None:
