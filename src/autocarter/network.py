@@ -4,7 +4,9 @@ import dataclasses
 import itertools
 import math
 import uuid
-from typing import TYPE_CHECKING
+from abc import abstractmethod
+from collections.abc import Hashable
+from typing import TYPE_CHECKING, Protocol, Self
 
 import vector
 from rich.progress import track
@@ -13,13 +15,17 @@ if TYPE_CHECKING:
     from autocarter.colour import Colour
 
 
+class ID(Protocol, Hashable):
+    @abstractmethod
+    def __lt__(self, other: Self):
+        pass
+
+
 @dataclasses.dataclass
 class Network:
-    lines: dict[uuid.UUID, Line] = dataclasses.field(default_factory=dict)
-    stations: dict[uuid.UUID, Station] = dataclasses.field(default_factory=dict)
-    connections: dict[tuple[uuid.UUID, uuid.UUID], set[uuid.UUID | Connection]] = dataclasses.field(
-        default_factory=dict
-    )
+    lines: dict[ID, Line] = dataclasses.field(default_factory=dict)
+    stations: dict[ID, Station] = dataclasses.field(default_factory=dict)
+    connections: dict[tuple[ID, ID], set[ID | Connection]] = dataclasses.field(default_factory=dict)
 
     def add_line(self, line: Line) -> Line:
         self.lines[line.id] = line
@@ -45,9 +51,9 @@ class Station:
     name: str | set[str]
     coordinates: vector.Vector2D
     tangent: vector.Vector2D = dataclasses.field(default_factory=lambda: vector.obj(x=1, y=0))
-    id: uuid.UUID = dataclasses.field(default_factory=uuid.uuid4)
-    line_coordinates: dict[uuid.UUID, float] = dataclasses.field(default_factory=dict)
-    adjacent_stations: dict[uuid.UUID, list[list[uuid.UUID]]] = dataclasses.field(default_factory=dict)
+    id: ID = dataclasses.field(default_factory=uuid.uuid4)
+    line_coordinates: dict[ID, float] = dataclasses.field(default_factory=dict)
+    adjacent_stations: dict[ID, list[list[ID]]] = dataclasses.field(default_factory=dict)
 
     def merge_into(self, n: Network, s: Station):
         to_add = {}
@@ -129,7 +135,7 @@ class Station:
 class Line:
     colour: Colour
     name: str
-    id: uuid.UUID = dataclasses.field(default_factory=uuid.uuid4)
+    id: ID = dataclasses.field(default_factory=uuid.uuid4)
 
     def __lt__(self, other):
         return self.name < other.name
