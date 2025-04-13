@@ -216,11 +216,16 @@ class Drawer:
                                     / len(stroke.dashes),
                                 )
                             )
+
+        max_thickness = (
+            max(max(b.thickness_multiplier for b in a.colour.strokes) for a in station.lines(self.n))
+            * self.s.line_thickness
+        )
         return svg.G(
             elements=[
                 svg.Path(
                     stroke="#000",
-                    stroke_width=3.5 if self.s.station_dots else 5.0,
+                    stroke_width=(1.75 if self.s.station_dots else 2.5) * max_thickness,
                     stroke_linecap="round",
                     d=[
                         svg.M(c1.x, c1.y),
@@ -229,7 +234,7 @@ class Drawer:
                 ),
                 svg.Path(
                     stroke="#fff",
-                    stroke_width=2.5,
+                    stroke_width=1.25 * max_thickness,
                     stroke_linecap="round",
                     d=[
                         svg.M(c1.x, c1.y),
@@ -240,7 +245,7 @@ class Drawer:
                     text=station.name if isinstance(station.name, str) else " / ".join(sorted(station.name)),
                     x=t.x,
                     y=t.y,
-                    font_size=3,
+                    font_size=1.5 * max_thickness,
                     font_family="sans-serif",
                     text_anchor="start",
                     transform=[
