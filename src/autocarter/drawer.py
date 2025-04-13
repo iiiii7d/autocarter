@@ -106,7 +106,7 @@ class Drawer:
 
                 elements.append(
                     svg.Path(
-                        stroke_width=self.s.line_thickness,
+                        stroke_width=self.s.line_thickness / 5,
                         stroke="#888",
                         fill_opacity=0,
                         stroke_dasharray=[1, 1],
@@ -148,6 +148,7 @@ class Drawer:
             else:
                 n2 = (u.coordinates - v.coordinates) / self.s.stiffness * self.s.scale
 
+            max_thickness = max((b.thickness_multiplier for b in line.colour.strokes), default = 1.0) * self.s.line_thickness
             i = str(uuid.uuid4())
             elements.append(
                 svg.G(
@@ -161,7 +162,7 @@ class Drawer:
                             ],
                         ),
                         svg.Text(
-                            font_size=3,
+                            font_size=1.5 * max_thickness,
                             text_anchor="middle",
                             dy=1,
                             font_weight="bold",
@@ -178,7 +179,12 @@ class Drawer:
         c = self.move_vec(station.coordinates)
         c1 = c + min(station.line_coordinates.values() or (0,)) * self.s.line_thickness * station.tangent
         c2 = c + max(station.line_coordinates.values() or (0,)) * self.s.line_thickness * station.tangent
-        t = (c1 if c1.x > c2.x else c2) + vector.obj(x=4, y=1)
+
+        max_thickness_multiplier = (
+            max((max(b.thickness_multiplier for b in a.colour.strokes) for a in station.lines(self.n) if a.colour.strokes), default=1.0)
+        )
+        max_thickness = max_thickness_multiplier * sef.s.max_thickness
+        t = (c1 if c1.x > c2.x else c2) + vector.obj(x=4, y=1) * max_thickness_multiplier
         if t.x < c.x:
             t += 2 * (c - t)
         line_dots = []
@@ -217,10 +223,6 @@ class Drawer:
                                 )
                             )
 
-        max_thickness = (
-            max((max(b.thickness_multiplier for b in a.colour.strokes) for a in station.lines(self.n) if a.colour.strokes), default=1.0)
-            * self.s.line_thickness
-        )
         return svg.G(
             elements=[
                 svg.Path(
