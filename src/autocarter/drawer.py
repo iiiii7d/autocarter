@@ -164,7 +164,7 @@ class Drawer:
                         svg.Text(
                             font_size=1.5 * max_thickness,
                             text_anchor="middle",
-                            dy=1,
+                            dy=max_thickness / 2,
                             font_weight="bold",
                             font_family="sans-serif",
                             fill=line.colour.text,
