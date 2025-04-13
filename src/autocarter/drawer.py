@@ -218,7 +218,7 @@ class Drawer:
                             )
 
         max_thickness = (
-            max(max(b.thickness_multiplier for b in a.colour.strokes) for a in station.lines(self.n))
+            max(max(b.thickness_multiplier for b in a.colour.strokes) for a in station.lines(self.n) if a.colour.strokes, default=1.0)
             * self.s.line_thickness
         )
         return svg.G(
