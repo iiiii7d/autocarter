@@ -183,7 +183,7 @@ class Drawer:
         max_thickness_multiplier = (
             max((max(b.thickness_multiplier for b in a.colour.strokes) for a in station.lines(self.n) if a.colour.strokes), default=1.0)
         )
-        max_thickness = max_thickness_multiplier * self.s.max_thickness
+        max_thickness = max_thickness_multiplier * self.s.line_thickness
         t = (c1 if c1.x > c2.x else c2) + vector.obj(x=4, y=1) * max_thickness_multiplier
         if t.x < c.x:
             t += 2 * (c - t)
