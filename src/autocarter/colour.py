@@ -22,6 +22,9 @@ class Colour:
     def stroke(cls, stroke: Stroke) -> Self:
         return cls(strokes=(stroke,))
 
+    def max_thickness_multiplier(self) -> float:
+        return max((b.thickness_multiplier for b in self.strokes), default=1.0)
+
     @functools.cached_property
     def text(self) -> str:
         if self.text_override is not None:

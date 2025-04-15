@@ -148,7 +148,7 @@ class Drawer:
             else:
                 n2 = (u.coordinates - v.coordinates) / self.s.stiffness * self.s.scale
 
-            max_thickness = max((b.thickness_multiplier for b in line.colour.strokes), default = 1.0) * self.s.line_thickness
+            max_thickness = line.colour.max_thickness_multiplier() * self.s.line_thickness
             i = str(uuid.uuid4())
             elements.append(
                 svg.G(
@@ -181,7 +181,7 @@ class Drawer:
         c2 = c + max(station.line_coordinates.values() or (0,)) * self.s.line_thickness * station.tangent
 
         max_thickness_multiplier = (
-            max((max(b.thickness_multiplier for b in a.colour.strokes) for a in station.lines(self.n) if a.colour.strokes), default=1.0)
+            max((a.colour.max_thickness_multiplier() for a in station.lines(self.n)), default=1.0)
         )
         max_thickness = max_thickness_multiplier * self.s.line_thickness
         t = (c1 if c1.x > c2.x else c2) + vector.obj(x=4, y=1) * max_thickness_multiplier

@@ -128,7 +128,10 @@ class Station:
 
     def calculate_line_coordinates(self, n: Network):
         lines = self.lines(n)
-        self.line_coordinates = {line.id: i - (len(lines) - 1) / 2 for i, line in enumerate(sorted(lines))}
+        lc = [0.0]
+        for prev_line, line in itertools.pairwise(lines):
+            lc.append(lc[-1] + line.colour.max_thickness_multiplier()/2 + prev_line.colour.max_thickness_multiplier()/2)
+        self.line_coordinates = {line.id: c - sum(lc)/2 for line, c in zip(lines, lc)}
 
 
 @dataclasses.dataclass(frozen=True)
