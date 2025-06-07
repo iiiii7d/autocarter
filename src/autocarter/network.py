@@ -8,8 +8,9 @@ from abc import abstractmethod
 from collections.abc import Hashable
 from typing import TYPE_CHECKING, Protocol, Self
 
-import vector
 from rich.progress import track
+
+from autocarter.vector import Vector
 
 if TYPE_CHECKING:
     from autocarter.colour import Colour
@@ -49,8 +50,8 @@ class Network:
 @dataclasses.dataclass
 class Station:
     name: str | set[str]
-    coordinates: vector.Vector2D
-    tangent: vector.Vector2D = dataclasses.field(default_factory=lambda: vector.obj(x=1, y=0))
+    coordinates: Vector
+    tangent: Vector = Vector(1, 0)  # noqa: RUF009
     id: ID = dataclasses.field(default_factory=uuid.uuid4)
     line_coordinates: dict[ID, float] = dataclasses.field(default_factory=dict)
     adjacent_stations: dict[ID, list[list[ID]]] = dataclasses.field(default_factory=dict)
@@ -107,22 +108,18 @@ class Station:
     def calculate_tangent(self, n: Network):
         conn = [ss for s, line in self.connections(n) for ss in (s,) * len([a for a in line if isinstance(a, Line)])]
         if len({(a.coordinates.x, a.coordinates.y) for a in conn}) == 1:
-            self.tangent = (conn[0].coordinates - self.coordinates).unit().rotateZ(math.pi / 2)
+            self.tangent = (conn[0].coordinates - self.coordinates).unit.rotate(math.pi / 2)
         elif all(
             (a.coordinates - self.coordinates).dot(b.coordinates - self.coordinates) > 0
             for a, b in itertools.combinations(conn, 2)
         ):
-            self.tangent = (
-                sum(((a.coordinates - self.coordinates).unit() for a in conn), start=vector.obj(x=0, y=0))
-                .unit()
-                .rotateZ(math.pi / 2)
+            self.tangent = sum(((a.coordinates - self.coordinates).unit for a in conn), start=Vector(0)).unit.rotate(
+                math.pi / 2
             )
         else:
-            self.tangent = sum(
-                ((a.coordinates - self.coordinates).unit() for a in conn), start=vector.obj(x=0, y=0)
-            ).unit()
-        if self.tangent == vector.obj(x=0, y=0) and len(conn) >= 1:
-            self.tangent = (conn[0].coordinates - self.coordinates).unit().rotateZ(math.pi / 2)
+            self.tangent = sum(((a.coordinates - self.coordinates).unit for a in conn), start=Vector(0)).unit
+        if self.tangent == Vector(0) and len(conn) >= 1:
+            self.tangent = (conn[0].coordinates - self.coordinates).unit.rotate(math.pi / 2)
         if self.tangent.x < 0 or (self.tangent.x == 0 and self.tangent.y < 0):
             self.tangent = -self.tangent
 
@@ -130,8 +127,10 @@ class Station:
         lines = self.lines(n)
         lc = [0.0]
         for prev_line, line in itertools.pairwise(lines):
-            lc.append(lc[-1] + line.colour.max_thickness_multiplier()/2 + prev_line.colour.max_thickness_multiplier()/2)
-        self.line_coordinates = {line.id: c - lc[-1]/2 for line, c in zip(lines, lc)}
+            lc.append(
+                lc[-1] + line.colour.max_thickness_multiplier() / 2 + prev_line.colour.max_thickness_multiplier() / 2
+            )
+        self.line_coordinates = {line.id: c - lc[-1] / 2 for line, c in zip(lines, lc)}
 
 
 @dataclasses.dataclass(frozen=True)

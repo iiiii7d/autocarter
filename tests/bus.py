@@ -2,12 +2,11 @@ import itertools
 import json
 import random
 
-import vector
-
 from autocarter.colour import Colour
 from autocarter.drawer import Drawer
 from autocarter.network import Connection, Line, Network, Station
 from autocarter.style import Style
+from autocarter.vector import Vector
 
 with open("./stops.json") as f:
     stops = json.load(f)
@@ -22,7 +21,7 @@ for stop_id, stop_json in stops.items():
         Station(
             id=stop_id,
             name=stop_id + " " + stop_json[2].replace("&", "&amp;"),
-            coordinates=vector.obj(x=stop_json[0], y=-stop_json[1]),
+            coordinates=Vector(stop_json[0], -stop_json[1]),
         )
     )
     stations.setdefault(stop_id[:-1], []).append(station)

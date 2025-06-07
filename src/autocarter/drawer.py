@@ -6,11 +6,11 @@ import uuid
 from typing import TYPE_CHECKING
 
 import svg
-import vector
 from rich.progress import track
 
 from autocarter.network import Connection, Line, Network, Station
 from autocarter.style import Style
+from autocarter.vector import Vector
 
 if TYPE_CHECKING:
     from autocarter.colour import Colour
@@ -23,22 +23,22 @@ class Drawer:
 
     def __init__(self, n: Network, s: Style | None = None):
         s = s or Style()
-        s.offset = vector.obj(
-            x=min(s.coordinates.x for s in n.stations.values()), y=min(s.coordinates.y for s in n.stations.values())
+        s.offset = Vector(
+            min(s.coordinates.x for s in n.stations.values()), min(s.coordinates.y for s in n.stations.values())
         )
         self.n = n
         self.s = s
 
-    def width_height(self) -> vector.Vector2D:
+    def width_height(self) -> Vector:
         xs = [s.coordinates.x for s in self.n.stations.values()]
         ys = [s.coordinates.y for s in self.n.stations.values()]
-        return vector.obj(
-            x=(max(xs) - min(xs)) * self.s.scale + 2 * self.s.padding,
-            y=(max(ys) - min(ys)) * self.s.scale + 2 * self.s.padding,
+        return Vector(
+            (max(xs) - min(xs)) * self.s.scale + 2 * self.s.padding,
+            (max(ys) - min(ys)) * self.s.scale + 2 * self.s.padding,
         )
 
-    def move_vec(self, c: vector.Vector2D) -> vector.Vector2D:
-        return (c - self.s.offset) * self.s.scale + vector.obj(x=self.s.padding, y=self.s.padding)
+    def move_vec(self, c: Vector) -> Vector:
+        return (c - self.s.offset) * self.s.scale + Vector(self.s.padding, self.s.padding)
 
     def draw(self) -> svg.SVG:
         wh = self.width_height()
@@ -98,11 +98,11 @@ class Drawer:
 
                 cu1 = cu + min(u.line_coordinates.values() or (0,)) * self.s.line_thickness * u.tangent
                 cu2 = cu + max(u.line_coordinates.values() or (0,)) * self.s.line_thickness * u.tangent
-                lu = cu1 if ((cu1 - cv).rho < (cu2 - cv).rho) else cu2
+                lu = cu1 if (abs(cu1 - cv) < abs(cu2 - cv)) else cu2
 
                 cv1 = cv + min(v.line_coordinates.values() or (0,)) * self.s.line_thickness * v.tangent
                 cv2 = cv + max(v.line_coordinates.values() or (0,)) * self.s.line_thickness * v.tangent
-                lv = cv1 if ((cv1 - cu).rho < (cv2 - cu).rho) else cv2
+                lv = cv1 if (abs(cv1 - cu) < abs(cv2 - cu)) else cv2
 
                 elements.append(
                     svg.Path(
@@ -121,17 +121,17 @@ class Drawer:
             nu = self.move_vec(u.coordinates) + u.line_coordinates[line.id] * self.s.line_thickness * u.tangent
             nv = self.move_vec(v.coordinates) + v.line_coordinates[line.id] * self.s.line_thickness * v.tangent
 
-            uo: vector.Vector2D | None = next(
+            uo: Station | None = next(
                 (self.n.stations[b] for a in u.adjacent_stations[line.id] if v.id not in a for b in a), None
             )
-            vo: vector.Vector2D | None = next(
+            vo: Station | None = next(
                 (self.n.stations[b] for a in v.adjacent_stations[line.id] if u.id not in a for b in a), None
             )
 
             if uo is not None:
                 n1 = (
-                    (v.coordinates - uo.coordinates).unit()
-                    * (v.coordinates - u.coordinates).rho
+                    (v.coordinates - uo.coordinates).unit
+                    * abs(v.coordinates - u.coordinates)
                     / self.s.stiffness
                     * self.s.scale
                 )
@@ -140,8 +140,8 @@ class Drawer:
 
             if vo is not None:
                 n2 = (
-                    (u.coordinates - vo.coordinates).unit()
-                    * (u.coordinates - v.coordinates).rho
+                    (u.coordinates - vo.coordinates).unit
+                    * abs(u.coordinates - v.coordinates)
                     / self.s.stiffness
                     * self.s.scale
                 )
@@ -180,11 +180,11 @@ class Drawer:
         c1 = c + min(station.line_coordinates.values() or (0,)) * self.s.line_thickness * station.tangent
         c2 = c + max(station.line_coordinates.values() or (0,)) * self.s.line_thickness * station.tangent
 
-        max_thickness_multiplier = (
-            max((a.colour.max_thickness_multiplier() for a in station.lines(self.n)), default=1.0)
+        max_thickness_multiplier = max(
+            (a.colour.max_thickness_multiplier() for a in station.lines(self.n)), default=1.0
         )
         max_thickness = max_thickness_multiplier * self.s.line_thickness
-        t = (c1 if c1.x > c2.x else c2) + vector.obj(x=4, y=1) * max_thickness_multiplier
+        t = (c1 if c1.x > c2.x else c2) + Vector(4, 1) * max_thickness_multiplier
         if t.x < c.x:
             t += 2 * (c - t)
         line_dots = []
@@ -252,7 +252,7 @@ class Drawer:
                     text_anchor="start",
                     transform=[
                         svg.Rotate(
-                            station.tangent.phi / math.pi * 180,
+                            station.tangent.angle / math.pi * 180,
                             (c1 if c1.x > c2.x else c2).x,
                             (c1 if c1.x > c2.x else c2).y,
                         )
