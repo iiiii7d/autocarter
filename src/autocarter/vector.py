@@ -15,7 +15,7 @@ class Vector(complex):
     def __truediv__(self, other) -> Self:
         return Vector(super().__truediv__(other))
 
-    def __neg__(self):
+    def __neg__(self) -> Self:
         return Vector(super().__neg__())
 
     @property
