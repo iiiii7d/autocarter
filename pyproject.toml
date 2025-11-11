@@ -25,11 +25,11 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "click",
-  "svg.py",
-  "vector",
-  "rich",
-  "beziers",
+  "click~=8.3",
+  "svg.py~=1.9",
+  "vector~=1.7",
+  "rich~=14.2",
+  "beziers~=0.6",
 ]
 
 [project.urls]
