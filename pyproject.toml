@@ -30,6 +30,7 @@ dependencies = [
   "vector~=1.7",
   "rich~=14.2",
   "beziers~=0.6",
+  "rustworkx~=0.17"
 ]
 
 [project.urls]

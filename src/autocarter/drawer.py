@@ -23,15 +23,13 @@ class Drawer:
 
     def __init__(self, n: Network, s: Style | None = None):
         s = s or Style()
-        s.offset = Vector(
-            min(s.coordinates.x for s in n.stations.values()), min(s.coordinates.y for s in n.stations.values())
-        )
+        s.offset = Vector(min(s.coordinates.x for s in n.g.nodes()), min(s.coordinates.y for s in n.g.nodes()))
         self.n = n
         self.s = s
 
     def width_height(self) -> Vector:
-        xs = [s.coordinates.x for s in self.n.stations.values()]
-        ys = [s.coordinates.y for s in self.n.stations.values()]
+        xs = [s.coordinates.x for s in self.n.g.nodes()]
+        ys = [s.coordinates.y for s in self.n.g.nodes()]
         return Vector(
             (max(xs) - min(xs)) * self.s.scale + 2 * self.s.padding,
             (max(ys) - min(ys)) * self.s.scale + 2 * self.s.padding,
@@ -48,13 +46,13 @@ class Drawer:
             elements=[
                 *(
                     self.draw_connection(
-                        self.n.stations[u],
-                        self.n.stations[v],
-                        {line if isinstance(line, Connection) else self.n.lines[line] for line in lines},
+                        self.n.g.get_node_data(u),
+                        self.n.g.get_node_data(v),
+                        line,
                     )
-                    for (u, v), lines in track(self.n.connections.items(), description="Drawing connections")
+                    for u, v, line in track(self.n.g.edge_index_map().values(), description="Drawing connections")
                 ),
-                *(self.draw_station(s) for s in track(self.n.stations.values(), description="Drawing stations")),
+                *(self.draw_station(s) for s in track(self.n.g.nodes(), description="Drawing stations")),
             ],
         )
 
@@ -89,91 +87,83 @@ class Drawer:
                     )
         return svg.G(elements=elements)
 
-    def draw_connection(self, u: Station, v: Station, lines: set[Line | Connection]) -> svg.Element:
-        elements = []
-        for line in lines:
-            if isinstance(line, Connection):
-                cu = self.move_vec(u.coordinates)
-                cv = self.move_vec(v.coordinates)
+    def draw_connection(self, u: Station, v: Station, line: Line | Connection) -> svg.Element:
+        if isinstance(line, Connection):
+            cu = self.move_vec(u.coordinates)
+            cv = self.move_vec(v.coordinates)
 
-                cu1 = cu + min(u.line_coordinates.values() or (0,)) * self.s.line_thickness * u.tangent
-                cu2 = cu + max(u.line_coordinates.values() or (0,)) * self.s.line_thickness * u.tangent
-                lu = cu1 if (abs(cu1 - cv) < abs(cu2 - cv)) else cu2
+            cu1 = cu + min(u.line_coordinates.values() or (0,)) * self.s.line_thickness * u.tangent
+            cu2 = cu + max(u.line_coordinates.values() or (0,)) * self.s.line_thickness * u.tangent
+            lu = cu1 if (abs(cu1 - cv) < abs(cu2 - cv)) else cu2
 
-                cv1 = cv + min(v.line_coordinates.values() or (0,)) * self.s.line_thickness * v.tangent
-                cv2 = cv + max(v.line_coordinates.values() or (0,)) * self.s.line_thickness * v.tangent
-                lv = cv1 if (abs(cv1 - cu) < abs(cv2 - cu)) else cv2
+            cv1 = cv + min(v.line_coordinates.values() or (0,)) * self.s.line_thickness * v.tangent
+            cv2 = cv + max(v.line_coordinates.values() or (0,)) * self.s.line_thickness * v.tangent
+            lv = cv1 if (abs(cv1 - cu) < abs(cv2 - cu)) else cv2
 
-                elements.append(
-                    svg.Path(
-                        stroke_width=self.s.line_thickness / 5,
-                        stroke="#888",
-                        fill_opacity=0,
-                        stroke_dasharray=[1, 1],
-                        d=[
-                            svg.M(lu.x, lu.y),
-                            svg.L(lv.x, lv.y),
-                        ],
-                    ),
-                )
-                continue
-
-            nu = self.move_vec(u.coordinates) + u.line_coordinates[line.id] * self.s.line_thickness * u.tangent
-            nv = self.move_vec(v.coordinates) + v.line_coordinates[line.id] * self.s.line_thickness * v.tangent
-
-            uo: Station | None = next(
-                (self.n.stations[b] for a in u.adjacent_stations[line.id] if v.id not in a for b in a), None
-            )
-            vo: Station | None = next(
-                (self.n.stations[b] for a in v.adjacent_stations[line.id] if u.id not in a for b in a), None
+            return svg.Path(
+                stroke_width=self.s.line_thickness / 5,
+                stroke="#888",
+                fill_opacity=0,
+                stroke_dasharray=[1, 1],
+                d=[
+                    svg.M(lu.x, lu.y),
+                    svg.L(lv.x, lv.y),
+                ],
             )
 
-            if uo is not None:
-                n1 = (
-                    (v.coordinates - uo.coordinates).unit
-                    * abs(v.coordinates - u.coordinates)
-                    / self.s.stiffness
-                    * self.s.scale
-                )
-            else:
-                n1 = (v.coordinates - u.coordinates) / self.s.stiffness * self.s.scale
+        nu = self.move_vec(u.coordinates) + u.line_coordinates[line.id] * self.s.line_thickness * u.tangent
+        nv = self.move_vec(v.coordinates) + v.line_coordinates[line.id] * self.s.line_thickness * v.tangent
 
-            if vo is not None:
-                n2 = (
-                    (u.coordinates - vo.coordinates).unit
-                    * abs(u.coordinates - v.coordinates)
-                    / self.s.stiffness
-                    * self.s.scale
-                )
-            else:
-                n2 = (u.coordinates - v.coordinates) / self.s.stiffness * self.s.scale
+        uo: Station | None = next(
+            (self.n.station(b) for a in u.adjacent_stations[line.id] if v.id not in a for b in a), None
+        )
+        vo: Station | None = next(
+            (self.n.station(b) for a in v.adjacent_stations[line.id] if u.id not in a for b in a), None
+        )
 
-            max_thickness = line.colour.max_thickness_multiplier() * self.s.line_thickness
-            i = str(uuid.uuid4())
-            elements.append(
-                svg.G(
-                    elements=[
-                        self._draw_strokes(
-                            line.colour,
-                            i=i,
-                            d=[
-                                svg.M(nu.x, nu.y),
-                                svg.C(nu.x + n1.x, nu.y + n1.y, nv.x + n2.x, nv.y + n2.y, nv.x, nv.y),
-                            ],
-                        ),
-                        svg.Text(
-                            font_size=1.5 * max_thickness,
-                            text_anchor="middle",
-                            dy=max_thickness / 2,
-                            font_weight="bold",
-                            font_family="sans-serif",
-                            fill=line.colour.text,
-                            elements=[svg.TextPath(href="#" + i, text=line.name, startOffset="50%")],
-                        ),
-                    ]
-                )
+        if uo is not None:
+            n1 = (
+                (v.coordinates - uo.coordinates).unit
+                * abs(v.coordinates - u.coordinates)
+                / self.s.stiffness
+                * self.s.scale
             )
-        return svg.G(elements=elements)
+        else:
+            n1 = (v.coordinates - u.coordinates) / self.s.stiffness * self.s.scale
+
+        if vo is not None:
+            n2 = (
+                (u.coordinates - vo.coordinates).unit
+                * abs(u.coordinates - v.coordinates)
+                / self.s.stiffness
+                * self.s.scale
+            )
+        else:
+            n2 = (u.coordinates - v.coordinates) / self.s.stiffness * self.s.scale
+
+        max_thickness = line.colour.max_thickness_multiplier() * self.s.line_thickness
+        i = str(uuid.uuid4())
+        return svg.G(
+            elements=[
+                self._draw_strokes(
+                    line.colour,
+                    i=i,
+                    d=[
+                        svg.M(nu.x, nu.y),
+                        svg.C(nu.x + n1.x, nu.y + n1.y, nv.x + n2.x, nv.y + n2.y, nv.x, nv.y),
+                    ],
+                ),
+                svg.Text(
+                    font_size=1.5 * max_thickness,
+                    text_anchor="middle",
+                    dy=max_thickness / 2,
+                    font_weight="bold",
+                    font_family="sans-serif",
+                    fill=line.colour.text,
+                    elements=[svg.TextPath(href="#" + i, text=line.name, startOffset="50%")],
+                ),
+            ]
+        )
 
     def draw_station(self, station: Station) -> svg.Element:
         c = self.move_vec(station.coordinates)
@@ -189,8 +179,8 @@ class Drawer:
             t += 2 * (c - t)
         line_dots = []
         if self.s.station_dots:
-            for line_uuid, n in station.line_coordinates.items():
-                line = self.n.lines[line_uuid]
+            for line_id, n in station.line_coordinates.items():
+                line = self.n.line(line_id)
                 cl = c + n * self.s.line_thickness * station.tangent
                 for stroke in line.colour.strokes:
                     if isinstance(stroke.dashes, str):

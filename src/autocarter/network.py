@@ -9,6 +9,7 @@ from collections.abc import Hashable
 from typing import TYPE_CHECKING, Protocol, Self
 
 from rich.progress import track
+from rustworkx.rustworkx import PyGraph
 
 from autocarter.vector import Vector
 
@@ -24,36 +25,30 @@ class ID(Protocol, Hashable):
 
 @dataclasses.dataclass
 class Network:
-    lines: dict[ID, Line] = dataclasses.field(default_factory=dict)
-    stations: dict[ID, Station] = dataclasses.field(default_factory=dict)
-    connections: dict[tuple[ID, ID], set[ID | Connection]] = dataclasses.field(default_factory=dict)
-
-    station_merge_history: dict[ID, ID] = dataclasses.field(default_factory=dict)
+    g: PyGraph[Station, Line | Connection] = dataclasses.field(default_factory=lambda: PyGraph(multigraph=True))
+    station_id2index: dict[ID, int] = dataclasses.field(default_factory=dict)
+    lines: list[Line] = dataclasses.field(default_factory=list)
 
     def add_line(self, line: Line) -> Line:
-        self.lines[line.id] = line
+        self.lines.append(line)
         return line
 
+    def line(self, i: ID) -> Line:
+        return next(a for a in self.lines if a.id == i)
+
     def add_station(self, station: Station) -> Station:
-        self.stations[station.id] = station
+        idx = self.g.add_node(station)
+        self.station_id2index[station.id] = idx
         return station
 
-    def line(self, i: ID) -> Line:
-        return self.lines[i]
-
     def station(self, i: ID) -> Station:
-        prev_i = None
-        while i != prev_i:
-            prev_i = i
-            i = self.station_merge_history.get(i, i)
-        return self.stations[i]
+        return self.g.get_node_data(self.station_id2index[i])
 
     def connect(self, u: Station, v: Station, line: Line | Connection):
-        nu, nv = sorted((u.id, v.id))
-        self.connections.setdefault((nu, nv), set()).add(line.id if isinstance(line, Line) else line)
+        self.g.add_edge(self.station_id2index[u.id], self.station_id2index[v.id], line)
 
     def finalise(self):
-        for station in track(self.stations.values(), description="Finalising network"):
+        for station in track(self.g.nodes(), description="Finalising network"):
             station.calculate_tangent(self)
             station.calculate_adjacent_stations(self)
             station.calculate_line_coordinates(self)
@@ -69,23 +64,12 @@ class Station:
     adjacent_stations: dict[ID, list[list[ID]]] = dataclasses.field(default_factory=dict)
 
     def merge_into(self, n: Network, s: Station):
-        to_add = {}
-        to_delete = []
-        for (u, v), conn in n.connections.items():
-            if u == self.id:
-                nu, nv = sorted((s.id, v))
-                to_add[nu, nv] = conn
-                to_delete.append((u, v))
-            if v == self.id:
-                nu, nv = sorted((u, s.id))
-                to_add[nu, nv] = conn
-                to_delete.append((u, v))
-        for k, v in to_add.items():
-            n.connections.setdefault(k, set()).update(v)
-        for k in to_delete:
-            del n.connections[k]
+        idx = n.g.contract_nodes((n.station_id2index[self.id], n.station_id2index[s.id]), s)
+        n.station_id2index[self.id] = idx
+        n.station_id2index[s.id] = idx
 
         s.adjacent_stations.update(self.adjacent_stations)
+
         if isinstance(s.name, str):
             if isinstance(self.name, str):
                 s.name = {s.name, self.name}
@@ -95,10 +79,9 @@ class Station:
             s.name.add(self.name)
         else:
             s.name.update(self.name)
-        del n.stations[self.id]
-        n.station_merge_history[self.id] = s.id
 
     def connections(self, n: Network) -> list[tuple[Station, set[Connection | Line]]]:
+        return [a for a, b, c in n.g.out_edges()]
         return [
             (
                 n.stations[k[0] if self.id == k[1] else k[1]],
@@ -109,17 +92,18 @@ class Station:
         ]
 
     def calculate_adjacent_stations(self, n: Network):
-        for line in self.lines(n):
-            if line.id in self.adjacent_stations:
+        pre_existing_lines = set(self.adjacent_stations.keys())
+        for _, sidx, line in n.g.out_edges(n.station_id2index[self.id]):
+            if isinstance(line, Connection) or line.id in pre_existing_lines:
                 continue
-            stations = [s for s, ls in self.connections(n) if line in ls]
-            self.adjacent_stations[line.id] = [[a.id] for a in stations]
+            station = n.g.get_node_data(sidx)
+            self.adjacent_stations.setdefault(line.id, []).append([station.id])
 
     def lines(self, n: Network) -> set[Line]:
-        return {a for _, b in self.connections(n) for a in b if isinstance(a, Line)}
+        return {line for _, _, line in n.g.out_edges(n.station_id2index[self.id]) if isinstance(line, Line)}
 
     def calculate_tangent(self, n: Network):
-        conn = [ss for s, line in self.connections(n) for ss in (s,) * len([a for a in line if isinstance(a, Line)])]
+        conn = [n.g.get_node_data(s) for _, s, _ in n.g.out_edges(n.station_id2index[self.id])]
         if len({(a.coordinates.x, a.coordinates.y) for a in conn}) == 1:
             self.tangent = (conn[0].coordinates - self.coordinates).unit.rotate(math.pi / 2)
         elif all(

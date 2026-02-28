@@ -33,9 +33,9 @@ for line_id, line_json in services.items():
     for i, route in enumerate(line_json["routes"]):
         line = n.add_line(Line(id=line_id + "_" + str(i), name=line_id, colour=Colour.solid(colour)))
         if route[0] == route[-1]:
-            n.stations[route[0]].adjacent_stations[line.id] = [[route[1], route[-2]], []]
+            n.station(route[0]).adjacent_stations[line.id] = [[route[1], route[-2]], []]
         for s1_id, s2_id in itertools.pairwise(route):
-            n.connect(n.stations[s1_id], n.stations[s2_id], line)
+            n.connect(n.station(s1_id), n.station(s2_id), line)
 
 for stn_list in stations.values():
     for stn1, stn2 in itertools.combinations(stn_list, 2):
