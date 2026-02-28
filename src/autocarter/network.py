@@ -28,6 +28,8 @@ class Network:
     stations: dict[ID, Station] = dataclasses.field(default_factory=dict)
     connections: dict[tuple[ID, ID], set[ID | Connection]] = dataclasses.field(default_factory=dict)
 
+    station_merge_history: dict[ID, ID] = dataclasses.field(default_factory=dict)
+
     def add_line(self, line: Line) -> Line:
         self.lines[line.id] = line
         return line
@@ -35,6 +37,16 @@ class Network:
     def add_station(self, station: Station) -> Station:
         self.stations[station.id] = station
         return station
+
+    def line(self, i: ID) -> Line:
+        return self.lines[i]
+
+    def station(self, i: ID) -> Station:
+        prev_i = None
+        while i != prev_i:
+            prev_i = i
+            i = self.station_merge_history.get(i, i)
+        return self.stations[i]
 
     def connect(self, u: Station, v: Station, line: Line | Connection):
         nu, nv = sorted((u.id, v.id))
@@ -84,6 +96,7 @@ class Station:
         else:
             s.name.update(self.name)
         del n.stations[self.id]
+        n.station_merge_history[self.id] = s.id
 
     def connections(self, n: Network) -> list[tuple[Station, set[Connection | Line]]]:
         return [
