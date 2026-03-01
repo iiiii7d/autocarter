@@ -64,6 +64,8 @@ class Station:
     adjacent_stations: dict[ID, list[list[ID]]] = dataclasses.field(default_factory=dict)
 
     def merge_into(self, n: Network, s: Station):
+        for edge in n.g.edge_indices_from_endpoints(n.station_id2index[self.id], n.station_id2index[s.id]):
+            n.g.remove_edge_from_index(edge)
         idx = n.g.contract_nodes((n.station_id2index[self.id], n.station_id2index[s.id]), s)
         n.station_id2index[self.id] = idx
         n.station_id2index[s.id] = idx
@@ -79,17 +81,6 @@ class Station:
             s.name.add(self.name)
         else:
             s.name.update(self.name)
-
-    def connections(self, n: Network) -> list[tuple[Station, set[Connection | Line]]]:
-        return [a for a, b, c in n.g.out_edges()]
-        return [
-            (
-                n.stations[k[0] if self.id == k[1] else k[1]],
-                {(vv if isinstance(vv, Connection) else n.lines[vv]) for vv in v},
-            )
-            for k, v in n.connections.items()
-            if self.id in k
-        ]
 
     def calculate_adjacent_stations(self, n: Network):
         pre_existing_lines = set(self.adjacent_stations.keys())
