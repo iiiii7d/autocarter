@@ -114,16 +114,13 @@ class Drawer:
         nu = self.move_vec(u.coordinates) + u.line_coordinates[line.id] * self.s.line_thickness * u.tangent
         nv = self.move_vec(v.coordinates) + v.line_coordinates[line.id] * self.s.line_thickness * v.tangent
 
-        uo: Station | None = next(
-            (self.n.station(b) for a in u.adjacent_stations[line.id] if v.id not in a for b in a), None
-        )
-        vo: Station | None = next(
-            (self.n.station(b) for a in v.adjacent_stations[line.id] if u.id not in a for b in a), None
-        )
+        uo: list[Station] = [self.n.station(b) for a in u.adjacent_stations[line.id] if v.id not in a for b in a]
+        vo: list[Station] = [self.n.station(b) for a in v.adjacent_stations[line.id] if u.id not in a for b in a]
 
-        if uo is not None:
+        if len(uo) != 0:
+            uo_coordinates = Vector.mean(*(a.coordinates for a in uo))
             n1 = (
-                (v.coordinates - uo.coordinates).unit
+                (v.coordinates - uo_coordinates).unit
                 * abs(v.coordinates - u.coordinates)
                 / self.s.stiffness
                 * self.s.scale
@@ -131,9 +128,10 @@ class Drawer:
         else:
             n1 = (v.coordinates - u.coordinates) / self.s.stiffness * self.s.scale
 
-        if vo is not None:
+        if len(vo) != 0:
+            vo_coordinates = Vector.mean(*(a.coordinates for a in vo))
             n2 = (
-                (u.coordinates - vo.coordinates).unit
+                (u.coordinates - vo_coordinates).unit
                 * abs(u.coordinates - v.coordinates)
                 / self.s.stiffness
                 * self.s.scale

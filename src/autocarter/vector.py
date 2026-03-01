@@ -3,6 +3,9 @@ from typing import Self
 
 
 class Vector(complex):
+    x = complex.real
+    y = complex.imag
+
     def __add__(self, other) -> Self:
         return Vector(super().__add__(other))
 
@@ -32,5 +35,6 @@ class Vector(complex):
     def rotate(self, angle) -> Self:
         return self * Vector(math.cos(angle), math.sin(angle))
 
-    x = complex.real
-    y = complex.imag
+    @classmethod
+    def mean(cls, *vectors: Self) -> Self:
+        return Vector(sum(v.x for v in vectors), sum(v.y for v in vectors)) / len(vectors)
