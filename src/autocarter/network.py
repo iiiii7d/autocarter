@@ -64,11 +64,11 @@ class Station:
     adjacent_stations: dict[ID, list[list[ID]]] = dataclasses.field(default_factory=dict)
 
     def merge_into(self, n: Network, s: Station):
-        for edge in n.g.edge_indices_from_endpoints(n.station_id2index[self.id], n.station_id2index[s.id]):
-            n.g.remove_edge_from_index(edge)
-        idx = n.g.contract_nodes((n.station_id2index[self.id], n.station_id2index[s.id]), s)
-        n.station_id2index[self.id] = idx
-        n.station_id2index[s.id] = idx
+        old_idxs = (n.station_id2index[self.id], n.station_id2index[s.id])
+        new_idx = n.g.contract_nodes(old_idxs, s)
+        for i, idx in n.station_id2index.items():
+            if idx in old_idxs:
+                n.station_id2index[i] = new_idx
 
         s.adjacent_stations.update(self.adjacent_stations)
 
