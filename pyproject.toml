@@ -28,7 +28,7 @@ dependencies = [
   "click~=8.3",
   "svg.py~=1.9",
   "vector~=1.7",
-  "rich~=14.2",
+  "rich~=15.0",
   "beziers~=0.6",
   "rustworkx~=0.17"
 ]
